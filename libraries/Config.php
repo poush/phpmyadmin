@@ -79,7 +79,7 @@ class Config
      * Keeps a current copy for cookies in JSON 
      * @var string
      */
-    var $cookies = [];
+    public static $cookies = [];
 
     /**
      * constructor
@@ -1586,13 +1586,20 @@ class Config
      */
     public function removeCookie($cookie,$validity=null)
     {
-        setcookie('new','value',time()+2592000,'/');
+        return true;
+        die('huh ?');
+        $file = fopen('log.txt', 'a') or die('Cannot open file');
+
+
+
         $parentCookie = $this->getCookieParent($cookie);
 
         $cookieData = json_decode(
-                                isset($_COOKIE[$parentCookie])?
-                                $_COOKIE[$parentCookie]:'{}'
+                                isset(self::$cookies[$parentCookie])?
+                                self::$cookies[$parentCookie]:'{}'
                         , true);
+
+
         // Removing child cookie
         if(isset($cookieData[$parentCookie]))
             unset($cookieData[$cookie]);
@@ -1620,7 +1627,9 @@ class Config
                 $time = time() + $validity;
             } 
         }
-
+        self::$cookies[$parentCookie] = json_encode($cookieData);
+// 
+        // fwrite($file, " Deleting Cookie $cookie \n status is".json_encode(self::$cookies[$parentCookie]));
         return setcookie(
             $parentCookie,
             json_encode($cookieData),
@@ -1648,31 +1657,33 @@ class Config
     ) {
 
         $parentCookie = $this->getCookieParent($cookie);
-
-        $cookieData = json_decode(
-                                isset($this->cookies[$parentCookie])?
-                                $this->cookies[$parentCookie]:'{}'
+        $file = fopen('log.txt', 'a') or die('Cannot open file');
+                $cookieData = json_decode(
+                                isset(self::$cookies[$parentCookie])?
+                                self::$cookies[$parentCookie]:'{}'
                         , true);
+        fwrite($file,"\nI got ".json_encode($cookieData));
         // if($cookie == 'pma_fontsize')
-            // die(var_dump($this->cookies[$parentCookie]));
+        //     // die(var_dump(self::$cookies[$parentCookie]));
         // if (mb_strlen($value) && null !== $default && $value === $default
         // ) {
-        //     echo "my value is $value , with $default ";
-        //     die();
+
         //     // default value is used
         //     if (isset($cookieData[$cookie])) {
         //         // remove cookie
         //         unset($cookieData[$cookie]);
         //     }
         // }
-        if (   !mb_strlen($value) && isset($cookieData[$cookie])) {
+        // else 
+            if (   !mb_strlen($value) && isset($cookieData[$cookie])) {
                 // remove cookie, value is empty
                 unset($cookieData[$cookie]);
-        }
+            }
 
-        elseif (! isset($cookieData[$cookie]) 
+        elseif (!isset($cookieData[$cookie]) 
               || $cookieData[$cookie] !== $value) {
                 //set cookie
+                fwrite($file, "\nInside");
                 $cookieData[$cookie] = $value;
         }
         
@@ -1701,16 +1712,14 @@ class Config
         }
 
 
-        $file = fopen('log.txt', 'a') or die('Cannot open file');
-        fwrite($file, $this->cookies[$parentCookie]."Before \n");
-        $this->cookies[$parentCookie] = json_encode($cookieData);
-        fwrite($file, $this->cookies[$cookie]."\n");
-        fwrite($file, $this->cookies[$parentCookie]."\n");
+        fwrite($file, "I am sending". json_encode($cookieData));
+        self::$cookies[$parentCookie] = json_encode($cookieData);
 
-        if($this->cookies[$parentCookie] != "")
-        return setcookie(
+
+
+            return setcookie(
                 $parentCookie,
-                $this->cookies[$parentCookie],
+                self::$cookies[$parentCookie],
                 $time,
                 $this->getCookiePath(),
                 '',
@@ -1733,8 +1742,8 @@ class Config
     {
         $parentCookie = $this->getCookieParent($cookie);
         $cookieData = json_decode(
-                                isset($_COOKIE[$parentCookie])?
-                                $_COOKIE[$parentCookie]:'{}'
+                                isset(self::$cookies[$parentCookie])?
+                                self::$cookies[$parentCookie]:'{}'
                         , true);
 
         if(isset($cookieData[$cookie]))
@@ -1766,6 +1775,7 @@ class Config
 
     public function clearAllCookies()
     {
+        self::$cookies = [];
         foreach($_COOKIE as $cookie => $value)
             setCookie( 
                 $cookie,
