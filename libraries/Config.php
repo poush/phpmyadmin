@@ -76,6 +76,12 @@ class Config
     var $done = false;
 
     /**
+     * Keeps a current copy for cookies in JSON 
+     * @var string
+     */
+    var $cookies = [];
+
+    /**
      * constructor
      *
      * @param string $source source to read config from
@@ -879,7 +885,7 @@ class Config
         // just to shorten the lines
         $collation = 'collation_connection';
         if (isset($GLOBALS[$collation])
-            && (isset($_COOKIE['pma_collation_connection'])
+            && ($this->hasCookie('pma_collation_connection')
             || isset($_POST[$collation]))
         ) {
             if ((! isset($config_data[$collation])
@@ -1008,7 +1014,7 @@ class Config
         }
 
         // save language
-        if (isset($_COOKIE['pma_lang']) || isset($_POST['lang'])) {
+        if ($this->hasCookie('pma_lang') || isset($_POST['lang'])) {
             if ((! isset($config_data['lang'])
                 && $GLOBALS['lang'] != 'en')
                 || isset($config_data['lang'])
@@ -1075,7 +1081,7 @@ class Config
      */
     public function getUserValue($cookie_name, $cfg_value)
     {
-        $cookie_exists = isset($_COOKIE) && !empty($_COOKIE[$cookie_name]);
+        $cookie_exists = isset($_COOKIE) && !empty($this->getCookie($cookie_name));
         $prefs_type = $this->get('user_preferences');
         if ($prefs_type == 'db') {
             // permanent user preferences value exists, remove cookie
@@ -1083,7 +1089,7 @@ class Config
                 $this->removeCookie($cookie_name);
             }
         } else if ($cookie_exists) {
-            return $_COOKIE[$cookie_name];
+            return $this->getCookie($cookie_name);
         }
         // return value from $cfg array
         return $cfg_value;
@@ -1228,8 +1234,8 @@ class Config
     {
         if (null !== $this->get('fontsize')) {
             $fontsize = intval($this->get('fontsize'));
-        } elseif (isset($_COOKIE['pma_fontsize'])) {
-            $fontsize = intval($_COOKIE['pma_fontsize']);
+        } elseif ($this->hasCookie('pma_fontsize')) {
+            $fontsize = intval($this->getCookie('pma_fontsize'));
         } else {
             $fontsize = 0;
         }
@@ -1257,8 +1263,8 @@ class Config
     {
         if (! empty($_REQUEST['collation_connection'])) {
             $collation = strip_tags($_REQUEST['collation_connection']);
-        } elseif (! empty($_COOKIE['pma_collation_connection'])) {
-            $collation = strip_tags($_COOKIE['pma_collation_connection']);
+        } elseif (! empty($this->getCookie('pma_collation_connection'))) {
+            $collation = strip_tags($this->getCookie('pma_collation_connection'));
         } else {
             $collation = $this->get('DefaultConnectionCollation');
         }
@@ -1278,8 +1284,8 @@ class Config
             $new_fontsize = $_GET['set_fontsize'];
         } elseif (isset($_POST['set_fontsize'])) {
             $new_fontsize = $_POST['set_fontsize'];
-        } elseif (isset($_COOKIE['pma_fontsize'])) {
-            $new_fontsize = $_COOKIE['pma_fontsize'];
+        } elseif ($this->hasCookie('pma_fontsize')) {
+            $new_fontsize = $this->getCookie('pma_fontsize');
         }
 
         if (preg_match('/^[0-9.]+(px|em|pt|\%)$/', $new_fontsize)) {
@@ -1516,8 +1522,8 @@ class Config
         $current_size = $GLOBALS['PMA_Config']->get('fontsize');
         // for the case when there is no config file (this is supported)
         if (empty($current_size)) {
-            if (isset($_COOKIE['pma_fontsize'])) {
-                $current_size = htmlspecialchars($_COOKIE['pma_fontsize']);
+            if ($this->hasCookie('pma_fontsize')) {
+                $current_size = htmlspecialchars($this->getCookie('pma_fontsize'));
             } else {
                 $current_size = '82%';
             }
@@ -1555,24 +1561,70 @@ class Config
     }
 
     /**
+     * Gives parent index of a cookie
+     * @param  string $cookie Name of cookie
+     * @return string         Name of parent index
+     */
+    public function getCookieParent($cookie)
+    {
+        if(strpos('pmaUser', $cookie))
+            return 'pmaUser-N';
+        elseif(strpos('pma-iv', $cookie) || strpos('pamlang', $cookie))
+            return 'pmaAuth-N';
+        else
+            return 'pmaConfig';
+    }
+
+
+    /**
      * removes cookie
      *
      * @param string $cookie name of cookie to remove
+     * @param int    $validity validity of cookie in seconds (default is one month)
      *
      * @return boolean result of setcookie()
      */
-    public function removeCookie($cookie)
+    public function removeCookie($cookie,$validity=null)
     {
+        setcookie('new','value',time()+2592000,'/');
+        $parentCookie = $this->getCookieParent($cookie);
+
+        $cookieData = json_decode(
+                                isset($_COOKIE[$parentCookie])?
+                                $_COOKIE[$parentCookie]:'{}'
+                        , true);
+        // Removing child cookie
+        if(isset($cookieData[$parentCookie]))
+            unset($cookieData[$cookie]);
+
         if (defined('TESTSUITE')) {
-            if (isset($_COOKIE[$cookie])) {
-                unset($_COOKIE[$cookie]);
-            }
+            if(sizeof($cookieData))
+                $_COOKIE[$parentCookie] = json_encode($cookieData);
+            else if(isset($_COOKIE[$parentCookie]))
+                // if no chld is cookie is set then
+                //  remove the parent index from cookie
+                unset($_COOKIE[$parentCookie]);
             return true;
         }
+        // Considering parent cookie is blank
+        $time = time()- 3600;
+
+        /* Calculate cookie validity if parent cookie is not blank */
+        if(sizeof($cookieData))
+        {   
+            if ($validity === null) {
+                $time = time() + 2592000;
+            } elseif ($validity == 0) {
+                $time = 0;
+            } else{
+                $time = time() + $validity;
+            } 
+        }
+
         return setcookie(
-            $cookie,
-            '',
-            time() - 3600,
+            $parentCookie,
+            json_encode($cookieData),
+            $time,
             $this->getCookiePath(),
             '',
             $this->isHttps()
@@ -1594,50 +1646,140 @@ class Config
     public function setCookie($cookie, $value, $default = null,
         $validity = null, $httponly = true
     ) {
-        if (mb_strlen($value) && null !== $default && $value === $default
-        ) {
-            // default value is used
-            if (isset($_COOKIE[$cookie])) {
-                // remove cookie
-                return $this->removeCookie($cookie);
-            }
-            return false;
+
+        $parentCookie = $this->getCookieParent($cookie);
+
+        $cookieData = json_decode(
+                                isset($this->cookies[$parentCookie])?
+                                $this->cookies[$parentCookie]:'{}'
+                        , true);
+        // if($cookie == 'pma_fontsize')
+            // die(var_dump($this->cookies[$parentCookie]));
+        // if (mb_strlen($value) && null !== $default && $value === $default
+        // ) {
+        //     echo "my value is $value , with $default ";
+        //     die();
+        //     // default value is used
+        //     if (isset($cookieData[$cookie])) {
+        //         // remove cookie
+        //         unset($cookieData[$cookie]);
+        //     }
+        // }
+        if (   !mb_strlen($value) && isset($cookieData[$cookie])) {
+                // remove cookie, value is empty
+                unset($cookieData[$cookie]);
         }
 
-        if (!mb_strlen($value) && isset($_COOKIE[$cookie])) {
-            // remove cookie, value is empty
-            return $this->removeCookie($cookie);
+        elseif (! isset($cookieData[$cookie]) 
+              || $cookieData[$cookie] !== $value) {
+                //set cookie
+                $cookieData[$cookie] = $value;
         }
-
-        if (! isset($_COOKIE[$cookie]) || $_COOKIE[$cookie] !== $value) {
-            // set cookie with new value
-            /* Calculate cookie validity */
+        
+        //Considering that parent cookie is blank            
+        $time = time() - 3600;
+            
+        /* Calculate cookie validity if parent cookie is not blank */
+        if(sizeof($cookieData))
+        {   
             if ($validity === null) {
-                $validity = time() + 2592000;
+                $time = time() + 2592000;
             } elseif ($validity == 0) {
-                $validity = 0;
-            } else {
-                $validity = time() + $validity;
-            }
-            if (defined('TESTSUITE')) {
-                $_COOKIE[$cookie] = $value;
-                return true;
-            }
-            return setcookie(
-                $cookie,
-                $value,
-                $validity,
+                $time = 0;
+            } else{
+                $time = time() + $validity;
+            } 
+        }
+        
+        if (defined('TESTSUITE')) {
+            if(sizeof($cookieData))
+                $_COOKIE[$parentCookie] = json_encode($cookieData);
+            else if(isset($_COOKIE[$parentCookie]))
+                // if cookieJSon in blank remote the index from cookie
+                unset($_COOKIE[$parentCookie]);
+            return true;
+        }
+
+
+        $file = fopen('log.txt', 'a') or die('Cannot open file');
+        fwrite($file, $this->cookies[$parentCookie]."Before \n");
+        $this->cookies[$parentCookie] = json_encode($cookieData);
+        fwrite($file, $this->cookies[$cookie]."\n");
+        fwrite($file, $this->cookies[$parentCookie]."\n");
+
+        if($this->cookies[$parentCookie] != "")
+        return setcookie(
+                $parentCookie,
+                $this->cookies[$parentCookie],
+                $time,
                 $this->getCookiePath(),
                 '',
                 $this->isHttps(),
                 $httponly
             );
-        }
-
-        // cookie has already $value as value
-        return true;
     }
 
+
+    
+
+    /**
+     *  Get cookie value 
+     *
+     * @param  string $cookie Name of cookie whose value is needed
+     *
+     * @return string Value of Cookie
+     */
+    public function getCookie($cookie)
+    {
+        $parentCookie = $this->getCookieParent($cookie);
+        $cookieData = json_decode(
+                                isset($_COOKIE[$parentCookie])?
+                                $_COOKIE[$parentCookie]:'{}'
+                        , true);
+
+        if(isset($cookieData[$cookie]))
+            return $cookieData[$cookie];
+        else
+            return null;
+
+    }
+
+    /**
+     * Check if there is needed cookie set or not
+     * @param  string  $cookie Name of cookie
+     * @return boolean         true if cookie is present else false
+     */
+    public function hasCookie($cookie)
+    {
+        if(null !== $this->getCookie($cookie))
+            return true;
+        else
+            return false;
+    }
+
+    /**
+     * Clear all PMA cookies 
+     * 
+     * @return true 
+     *
+     */
+
+    public function clearAllCookies()
+    {
+        foreach($_COOKIE as $cookie => $value)
+            setCookie( 
+                $cookie,
+                '',
+                time() - 3600,
+                $this->getCookiePath(),
+                '',
+                $this->isHttps()
+                );
+        
+        $_COOKIE = array();
+
+        return true;
+    }
 
     /**
      * Error handler to catch fatal errors when loading configuration

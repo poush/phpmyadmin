@@ -252,10 +252,8 @@ if (isset($_COOKIE)) {
         || $_COOKIE['pmaCookieVer'] != $pma_cookie_version
     ) {
         // delete all cookies
-        foreach ($_COOKIE as $cookie_name => $tmp) {
-            $GLOBALS['PMA_Config']->removeCookie($cookie_name);
-        }
-        $_COOKIE = array();
+        $GLOBALS['PMA_Config']->clearAllCookies();
+
         $GLOBALS['PMA_Config']->setCookie('pmaCookieVer', $pma_cookie_version);
     }
 }
@@ -355,7 +353,8 @@ if (PMA_checkPageValidity($_REQUEST['goto'], $goto_whitelist)) {
     $GLOBALS['goto'] = $_REQUEST['goto'];
     $GLOBALS['url_params']['goto'] = $_REQUEST['goto'];
 } else {
-    unset($_REQUEST['goto'], $_GET['goto'], $_POST['goto'], $_COOKIE['goto']);
+    unset($_REQUEST['goto'], $_GET['goto'], $_POST['goto']);
+    $GLOBALS['PMA_Config']->removeCookie('goto');
 }
 
 /**
@@ -365,7 +364,8 @@ if (PMA_checkPageValidity($_REQUEST['goto'], $goto_whitelist)) {
 if (PMA_checkPageValidity($_REQUEST['back'], $goto_whitelist)) {
     $GLOBALS['back'] = $_REQUEST['back'];
 } else {
-    unset($_REQUEST['back'], $_GET['back'], $_POST['back'], $_COOKIE['back']);
+    unset($_REQUEST['back'], $_GET['back'], $_POST['back']);
+    $GLOBALS['PMA_Config']->removeCookie('back');
 }
 
 /**

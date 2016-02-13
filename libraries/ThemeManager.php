@@ -230,8 +230,8 @@ class ThemeManager
      */
     public function getThemeCookie()
     {
-        if (isset($_COOKIE[$this->getThemeCookieName()])) {
-            return $_COOKIE[$this->getThemeCookieName()];
+        if ($GLOBALS['PMA_Config']->hasCookie($this->getThemeCookieName())) {
+            return $GLOBALS['PMA_Config']->getCookie($this->getThemeCookieName());
         }
 
         return false;

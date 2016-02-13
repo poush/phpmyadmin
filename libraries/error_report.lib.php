@@ -56,7 +56,7 @@ function PMA_getReportData($exception_type = 'js')
             "user_os" => PMA_USR_OS,
             "server_software" => $_SERVER['SERVER_SOFTWARE'],
             "user_agent_string" => $_SERVER['HTTP_USER_AGENT'],
-            "locale" => $_COOKIE['pma_lang'],
+            "locale" => $GLOBALS['config']->getCookie('pma_lang'),
             "configuration_storage" =>
                 is_null($relParams['db']) ? "disabled" :
                 "enabled",

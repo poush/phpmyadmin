@@ -454,8 +454,8 @@ class Theme
         if (!is_null($fs)) {
             return $fs;
         }
-        if (isset($_COOKIE['pma_fontsize'])) {
-            return htmlspecialchars($_COOKIE['pma_fontsize']);
+        if ($GLOBALS['PMA_Config']->hasCookie('pma_fontsize')) {
+            return htmlspecialchars($GLOBALS['PMA_Config']->getCookie('pma_fontsize'));
         }
         return '82%';
     }

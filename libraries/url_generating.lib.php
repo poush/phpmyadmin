@@ -49,10 +49,10 @@ function PMA_URL_getHiddenInputs($db = '', $table = '',
     ) {
         $params['server'] = $GLOBALS['server'];
     }
-    if (empty($_COOKIE['pma_lang']) && ! empty($GLOBALS['lang'])) {
+    if (empty($GLOBALS['PMA_Config']->getCookie('pma_lang')) && ! empty($GLOBALS['lang'])) {
         $params['lang'] = $GLOBALS['lang'];
     }
-    if (empty($_COOKIE['pma_collation_connection'])
+    if (empty($GLOBALS['PMA_Config']->getCookie('pma_collation_connection'))
         && ! empty($GLOBALS['collation_connection'])
     ) {
         $params['collation_connection'] = $GLOBALS['collation_connection'];
@@ -177,10 +177,10 @@ function PMA_URL_getCommon($params = array(), $encode = 'html', $divider = '?')
         $params['server'] = $GLOBALS['server'];
     }
 
-    if (empty($_COOKIE['pma_lang']) && ! empty($GLOBALS['lang'])) {
+    if (empty($GLOBALS['PMA_Config']->getCookie('pma_lang')) && ! empty($GLOBALS['lang'])) {
         $params['lang'] = $GLOBALS['lang'];
     }
-    if (empty($_COOKIE['pma_collation_connection'])
+    if (empty($GLOBALS['PMA_Config']->getCookie('pma_collation_connection'))
         && ! empty($GLOBALS['collation_connection'])
     ) {
         $params['collation_connection'] = $GLOBALS['collation_connection'];

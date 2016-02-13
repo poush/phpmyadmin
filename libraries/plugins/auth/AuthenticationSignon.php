@@ -97,7 +97,7 @@ class AuthenticationSignon extends AuthenticationPlugin
 
             list ($PHP_AUTH_USER, $PHP_AUTH_PW)
                 = get_login_credentials($GLOBALS['cfg']['Server']['user']);
-        } elseif (isset($_COOKIE[$session_name])) { /* Does session exist? */
+        } elseif ($GLOBALS['PMA_Config']->hasCookie($session_name])) { /* Does session exist? */
             /* End current session */
             $old_session = session_name();
             $old_id = session_id();
@@ -107,7 +107,7 @@ class AuthenticationSignon extends AuthenticationPlugin
 
             /* Load single signon session */
             session_name($session_name);
-            session_id($_COOKIE[$session_name]);
+            session_id($GLOBALS['PMA_Config']->getCookie($session_name]));
             if (!defined('TESTSUITE')) {
                 session_start();
             }
@@ -228,7 +228,7 @@ class AuthenticationSignon extends AuthenticationPlugin
         $session_name = $GLOBALS['cfg']['Server']['SignonSession'];
 
         /* Does session exist? */
-        if (isset($_COOKIE[$session_name])) {
+        if ($GLOBALS['PMA_Config']->hasCookie($session_name])) {
             /* End current session */
             if (!defined('TESTSUITE')) {
                 session_write_close();
@@ -236,7 +236,7 @@ class AuthenticationSignon extends AuthenticationPlugin
 
             /* Load single signon session */
             session_name($session_name);
-            session_id($_COOKIE[$session_name]);
+            session_id($GLOBALS['PMA_Config']->getCookie($session_name]));
             if (!defined('TESTSUITE')) {
                 session_start();
             }

@@ -252,7 +252,7 @@ function PMA_fatalError(
         // on fatal errors it cannot hurt to always delete the current session
         if ($delete_session
             && isset($GLOBALS['session_name'])
-            && isset($_COOKIE[$GLOBALS['session_name']])
+            && $GLOBALS['PMA_Config']->hasCookie('session_name')
         ) {
             $GLOBALS['PMA_Config']->removeCookie($GLOBALS['session_name']);
         }

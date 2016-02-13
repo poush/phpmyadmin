@@ -172,8 +172,8 @@ function PMA_getHtmlForCopyDatabase($db)
     );
 
     if (isset($_COOKIE)
-        && isset($_COOKIE['pma_switch_to_new'])
-        && $_COOKIE['pma_switch_to_new'] == 'true'
+        && $GLOBALS['PMA_Config']->hasCookie('pma_switch_to_new')
+        && $GLOBALS['PMA_Config']->getCookie('pma_switch_to_new') == 'true'
     ) {
         $pma_switch_to_new = 'true';
     }
@@ -1307,8 +1307,9 @@ function PMA_getHtmlForCopytable()
         . __('Adjust privileges') . Util::showDocu('faq', 'faq6-39')
         . '</label><br />';
 
-    if (isset($_COOKIE['pma_switch_to_new'])
-        && $_COOKIE['pma_switch_to_new'] == 'true'
+    if ($GLOBALS['PMA_Config']->hasCookie('pma_switch_to_new')
+        && $GLOBALS['PMA_Config']->getCookie('pma_switch_to_new')
+            == 'true'
     ) {
         $pma_switch_to_new = 'true';
     }
