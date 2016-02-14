@@ -16,4 +16,5 @@ $loader->register();
 // register the base directories for the namespace prefix
 $loader->addNamespace('PMA', '.');
 $loader->addNamespace('SqlParser', './libraries/sql-parser/src');
+$loader->addNamespace('Cookie', './libraries/Cookie');
 $loader->addNamespace('phpseclib', PHPSECLIB_INC_DIR);

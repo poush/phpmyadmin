@@ -42,6 +42,7 @@ use PMA\libraries\Response;
 use PMA\libraries\TypesMySQL;
 use PMA\libraries\Util;
 use PMA\libraries\LanguageManager;
+use PMA\libraries\Cookie;
 
 /**
  * block attempts to directly run this script
@@ -252,9 +253,9 @@ if (isset($_COOKIE)) {
         || $_COOKIE['pmaCookieVer'] != $pma_cookie_version
     ) {
         // delete all cookies
-        $GLOBALS['PMA_Config']->clearAllCookies();
+        Cookie::clearAllCookies();
 
-        $GLOBALS['PMA_Config']->setCookie('pmaCookieVer', $pma_cookie_version);
+        Cookie::setCookie('pmaCookieVer', $pma_cookie_version);
     }
 }
 
@@ -354,7 +355,7 @@ if (PMA_checkPageValidity($_REQUEST['goto'], $goto_whitelist)) {
     $GLOBALS['url_params']['goto'] = $_REQUEST['goto'];
 } else {
     unset($_REQUEST['goto'], $_GET['goto'], $_POST['goto']);
-    $GLOBALS['PMA_Config']->removeCookie('goto');
+    Cookie::removeCookie('goto');
 }
 
 /**
@@ -365,7 +366,7 @@ if (PMA_checkPageValidity($_REQUEST['back'], $goto_whitelist)) {
     $GLOBALS['back'] = $_REQUEST['back'];
 } else {
     unset($_REQUEST['back'], $_GET['back'], $_POST['back']);
-    $GLOBALS['PMA_Config']->removeCookie('back');
+    Cookie::removeCookie('back');
 }
 
 /**
@@ -664,9 +665,9 @@ if (! defined('PMA_MINIMUM_COMMON')) {
      * save some settings in cookies
      * @todo should be done in PMA\libraries\Config
      */
-    $GLOBALS['PMA_Config']->setCookie('pma_lang', $GLOBALS['lang']);
+    Cookie::setCookie('pma_lang', $GLOBALS['lang']);
     if (isset($GLOBALS['collation_connection'])) {
-        $GLOBALS['PMA_Config']->setCookie(
+        Cookie::setCookie(
             'pma_collation_connection',
             $GLOBALS['collation_connection']
         );

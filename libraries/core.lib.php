@@ -254,7 +254,7 @@ function PMA_fatalError(
             && isset($GLOBALS['session_name'])
             && $GLOBALS['PMA_Config']->hasCookie('session_name')
         ) {
-            $GLOBALS['PMA_Config']->removeCookie($GLOBALS['session_name']);
+            Config::removeCookie($GLOBALS['session_name']);
         }
 
         // Displays the error message

@@ -89,6 +89,8 @@ class Response
      */
     private function __construct()
     {
+        Cookie::sendCookies();
+        
         if (! defined('TESTSUITE')) {
             $buffer = OutputBuffering::getInstance();
             $buffer->start();
@@ -277,6 +279,7 @@ class Response
      */
     private function _ajaxResponse()
     {
+
         if (! isset($this->_JSON['message'])) {
             $this->_JSON['message'] = $this->_getDisplay();
         } else if ($this->_JSON['message'] instanceof Message) {
@@ -375,6 +378,7 @@ class Response
      */
     public static function response()
     {
+
         $response = Response::getInstance();
         chdir($response->getCWD());
         $buffer = OutputBuffering::getInstance();

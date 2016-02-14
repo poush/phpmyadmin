@@ -6,7 +6,7 @@
  * @package PhpMyAdmin
  */
 namespace PMA\libraries;
-
+use PMA\libraries\Cookie;
 /**
  * phpMyAdmin theme manager
  *
@@ -230,8 +230,8 @@ class ThemeManager
      */
     public function getThemeCookie()
     {
-        if ($GLOBALS['PMA_Config']->hasCookie($this->getThemeCookieName())) {
-            return $GLOBALS['PMA_Config']->getCookie($this->getThemeCookieName());
+        if (Cookie::hasCookie($this->getThemeCookieName())) {
+            return Cookie::getCookie($this->getThemeCookieName());
         }
 
         return false;
@@ -245,7 +245,7 @@ class ThemeManager
      */
     public function setThemeCookie()
     {
-        $GLOBALS['PMA_Config']->setCookie(
+        Cookie::setCookie(
             $this->getThemeCookieName(),
             $this->theme->id,
             $this->theme_default

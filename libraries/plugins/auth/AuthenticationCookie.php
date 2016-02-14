@@ -13,6 +13,7 @@ use PMA\libraries\Message;
 use PMA\libraries\plugins\AuthenticationPlugin;
 use PMA\libraries\Response;
 use PMA\libraries\Util;
+use PMA\libraries\Cookie;
 use ReCaptcha\ReCaptcha;
 
 /**
@@ -297,9 +298,9 @@ class AuthenticationCookie extends AuthenticationPlugin
 
         if (defined('PMA_CLEAR_COOKIES')) {
             foreach ($GLOBALS['cfg']['Servers'] as $key => $val) {
-                $GLOBALS['PMA_Config']->removeCookie('pmaPass-' . $key);
-                $GLOBALS['PMA_Config']->removeCookie('pmaServer-' . $key);
-                $GLOBALS['PMA_Config']->removeCookie('pmaUser-' . $key);
+                Cookie::removeCookie('pmaPass-' . $key);
+                Cookie::removeCookie('pmaServer-' . $key);
+                Cookie::removeCookie('pmaUser-' . $key);
             }
             return false;
         }
@@ -317,17 +318,17 @@ class AuthenticationCookie extends AuthenticationPlugin
             // -> delete password cookie(s)
             if ($GLOBALS['cfg']['LoginCookieDeleteAll']) {
                 foreach ($GLOBALS['cfg']['Servers'] as $key => $val) {
-                    $GLOBALS['PMA_Config']->removeCookie('pmaPass-' . $key);
-                    if ($GLOBALS['PMA_Config']->hasCookie('pmaPass-' . $key)) {
-                        $GLOBALS['PMA_Config']->removeCookie('pmaPass-' . $key);
+                    Cookie::removeCookie('pmaPass-' . $key);
+                    if (Cookie::hasCookie('pmaPass-' . $key)) {
+                        Cookie::removeCookie('pmaPass-' . $key);
                     }
                 }
             } else {
-                $GLOBALS['PMA_Config']->removeCookie(
+                Cookie::removeCookie(
                     'pmaPass-' . $GLOBALS['server']
                 );
-                if ($GLOBALS['PMA_Config']->hasCookie('pmaPass-' . $GLOBALS['server'])) {
-                  $GLOBALS['PMA_Config']->removeCookie('pmaPass-' . $GLOBALS['server']);
+                if (Cookie::hasCookie('pmaPass-' . $GLOBALS['server'])) {
+                  Cookie::removeCookie('pmaPass-' . $GLOBALS['server']);
                 }
             }
         }
@@ -398,21 +399,21 @@ class AuthenticationCookie extends AuthenticationPlugin
 
         // servername
         if ($GLOBALS['cfg']['AllowArbitraryServer']
-            && ! empty($GLOBALS['PMA_Config']->getCookie('pmaServer-' . $GLOBALS['server']))
+            && ! empty(Cookie::getCookie('pmaServer-' . $GLOBALS['server']))
         ) {
             $GLOBALS['pma_auth_server']
-                = $GLOBALS['PMA_Config']->getCookie('pmaServer-' . $GLOBALS['server']);
+                = Cookie::getCookie('pmaServer-' . $GLOBALS['server']);
         }
 
         // check cookies
-        if (empty($GLOBALS['PMA_Config']->getCookie('pmaUser-' . $GLOBALS['server']))
-            || empty($GLOBALS['PMA_Config']->getCookie('pma_iv-' . $GLOBALS['server']))
+        if (empty(Cookie::getCookie('pmaUser-' . $GLOBALS['server']))
+            || empty(Cookie::getCookie('pma_iv-' . $GLOBALS['server']))
         ) {
             return false;
         }
 
         $GLOBALS['PHP_AUTH_USER'] = $this->cookieDecrypt(
-            $GLOBALS['PMA_Config']->getCookie('pmaUser-' . $GLOBALS['server']),
+            Cookie::getCookie('pmaUser-' . $GLOBALS['server']),
             $this->_getEncryptionSecret()
         );
 
@@ -444,12 +445,12 @@ class AuthenticationCookie extends AuthenticationPlugin
         }
 
         // check password cookie
-        if (empty($GLOBALS['PMA_Config']->getCookie('pmaPass-' . $GLOBALS['server']))) {
+        if (empty(Cookie::getCookie('pmaPass-' . $GLOBALS['server']))) {
             return false;
         }
 
         $GLOBALS['PHP_AUTH_PW'] = $this->cookieDecrypt(
-            $GLOBALS['PMA_Config']->getCookie('pmaPass-' . $GLOBALS['server']),
+            Cookie::getCookie('pmaPass-' . $GLOBALS['server']),
             $this->_getSessionEncryptionSecret()
         );
 
@@ -546,13 +547,13 @@ class AuthenticationCookie extends AuthenticationPlugin
             if ($GLOBALS['cfg']['AllowArbitraryServer']) {
                 if (! empty($GLOBALS['pma_auth_server'])) {
                     // Duration = one month for servername
-                    $GLOBALS['PMA_Config']->setCookie(
+                    Cookie::setCookie(
                         'pmaServer-' . $GLOBALS['server'],
                         $cfg['Server']['host']
                     );
                 } else {
                     // Delete servername cookie
-                    $GLOBALS['PMA_Config']->removeCookie(
+                    Cookie::removeCookie(
                         'pmaServer-' . $GLOBALS['server']
                     );
                 }
@@ -609,7 +610,7 @@ class AuthenticationCookie extends AuthenticationPlugin
     {
         // Name and password cookies need to be refreshed each time
         // Duration = one month for username
-        $GLOBALS['PMA_Config']->setCookie(
+        Cookie::setCookie(
             'pmaUser-' . $GLOBALS['server'],
             $this->cookieEncrypt(
                 $username,
@@ -628,7 +629,7 @@ class AuthenticationCookie extends AuthenticationPlugin
     public function storePasswordCookie($password)
     {
         // Duration = as configured
-        $GLOBALS['PMA_Config']->setCookie(
+        Cookie::setCookie(
             'pmaPass-' . $GLOBALS['server'],
             $this->cookieEncrypt(
                 ! empty($password) ? $password : "\xff(blank)",
@@ -655,7 +656,7 @@ class AuthenticationCookie extends AuthenticationPlugin
         global $conn_error;
 
         // Deletes password cookie and displays the login form
-        $GLOBALS['PMA_Config']->removeCookie('pmaPass-' . $GLOBALS['server']);
+        Cookie::removeCookie('pmaPass-' . $GLOBALS['server']);
 
         $conn_error = $this->getErrorMessage();
 
@@ -754,7 +755,7 @@ class AuthenticationCookie extends AuthenticationPlugin
     {
         if (is_null($this->_cookie_iv)) {
             $this->_cookie_iv = base64_decode(
-                $GLOBALS['PMA_Config']->getCookie('pma_iv-' . $GLOBALS['server']),
+                Cookie::getCookie('pma_iv-' . $GLOBALS['server']),
                 true
             );
         }
@@ -811,7 +812,7 @@ class AuthenticationCookie extends AuthenticationPlugin
                 $this->getIVSize()
             );
         }
-        $GLOBALS['PMA_Config']->setCookie(
+        Cookie::setCookie(
             'pma_iv-' . $GLOBALS['server'],
             base64_encode($this->_cookie_iv)
         );

@@ -12,6 +12,7 @@
  * @package PhpMyAdmin
  */
 use PMA\libraries\plugins\export\ExportSql;
+use PMA\libraries\Cookie;
 
 /**
  * requirements
@@ -165,10 +166,10 @@ if (mb_strlen($GLOBALS['db'])
             if (isset($_REQUEST['switch_to_new'])
                 && $_REQUEST['switch_to_new'] == 'true'
             ) {
-                $GLOBALS['PMA_Config']->setCookie('pma_switch_to_new', 'true');
+                Cookie::setCookie('pma_switch_to_new', 'true');
                 $GLOBALS['db'] = $_REQUEST['newname'];
             } else {
-                $GLOBALS['PMA_Config']->setCookie('pma_switch_to_new', '');
+                Cookie::setCookie('pma_switch_to_new', '');
             }
         }
     }
